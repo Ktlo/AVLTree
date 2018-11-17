@@ -1,5 +1,6 @@
 package com.handtruth.avltree
 
+import java.util.*
 import kotlin.math.log2
 
 /**
@@ -81,21 +82,21 @@ private class AVLTreeMapIterator<K, V>(data: AVLTreeMap<K, V>) :
         MutableIterator<MutableMap.MutableEntry<K, V>>
         where K: Any {
 
-    private val queue = ArrayRoundQueue<Node<K, V>>((1.44 * log2((data.size + 2).toDouble())).toInt() + 1)
+    private val queue = ArrayDeque<Node<K, V>>((1.44 * log2((data.size + 2).toDouble())).toInt() + 1)
 
     init {
         val root = data.root
-        root != null && queue.put(root)
+        root != null && queue.add(root)
     }
 
-    override fun hasNext() = !queue.isEmpty
+    override fun hasNext() = queue.isNotEmpty()
 
     override fun next(): MutableMap.MutableEntry<K, V> {
         val node = queue.pop()
         val r = node.right
         val l = node.left
-        r != null && queue.put(r)
-        l != null && queue.put(l)
+        r != null && queue.add(r)
+        l != null && queue.add(l)
         return node
     }
 
