@@ -14,9 +14,6 @@ class AVLTreeMap<K, V>(private val comparator: Comparator<K>? = null) :
 
     private var count = 0
 
-    /**
-     * The amount of elements in the collection.
-     */
     override val size get() = count
 
     // Корень дерева
@@ -44,6 +41,7 @@ class AVLTreeMap<K, V>(private val comparator: Comparator<K>? = null) :
     override val values: MutableCollection<V> = AVLTreeMapVCollection(this)
 
     override fun clear() {
+        count = 0
         root = null
     }
 
@@ -74,17 +72,9 @@ class AVLTreeMap<K, V>(private val comparator: Comparator<K>? = null) :
 
     override fun toString() = entries.joinToString(prefix = "{", postfix = "}")
 
-    override fun equals(other: Any?) = other is AVLTreeMap<*, *> && entries == other.entries
+    override fun equals(other: Any?) = other is Map<*, *> && entries == other.entries
 
-    override fun hashCode(): Int {
-        var result = count
-        for ((i, item) in entries.withIndex()) {
-            val hash = item.hashCode()
-            val offset = i and 31
-            result = result xor ((hash ushr offset) or (hash shr (32 - offset)))
-        }
-        return result
-    }
+    override fun hashCode() = entries.sumBy { it.hashCode() }
 }
 
 private class AVLTreeMapIterator<K, V>(data: AVLTreeMap<K, V>) :
@@ -123,23 +113,11 @@ abstract class AVLTreeMapCollectionBase<T> : MutableCollection<T> {
     override fun removeAll(elements: Collection<T>) = elements.any { remove(it) }
     override fun containsAll(elements: Collection<T>) = elements.all { contains(it) }
     override fun toString() = joinToString(prefix = "[", postfix = "]")
-    override fun hashCode(): Int {
-        var result = data.size
-        for ((i, item) in withIndex()) {
-            val hash = item!!.hashCode()
-            val offset = i and 31
-            result = result xor ((hash ushr offset) or (hash shr (32 - offset)))
-        }
-        return result
-    }
-    override fun equals(other: Any?): Boolean {
-        if (other !is Collection<*> || data.size != other.size)
-            return false
-        val enumerator = other.iterator()
-        return all { enumerator.next() == it }
-    }
+    override fun hashCode() = sumBy { it?.hashCode() ?: 0 }
+    override fun equals(other: Any?) = other is Collection<*> && data.size == other.size && all { it in other }
 }
 
+@Suppress("EqualsOrHashCode")
 private class AVLTreeMapKVSet<K, V>(override val data: AVLTreeMap<K, V>) :
         AVLTreeMapCollectionBase<MutableMap.MutableEntry<K, V>>(), MutableSet<MutableMap.MutableEntry<K, V>>
         where K: Any {
@@ -161,9 +139,12 @@ private class AVLTreeMapKVSet<K, V>(override val data: AVLTreeMap<K, V>) :
         return result
     }
 
+    override fun equals(other: Any?): Boolean = other is Set<*> && super.equals(other)
+
     override fun contains(element: MutableMap.MutableEntry<K, V>) = data[element.key] == element.value
 }
 
+@Suppress("EqualsOrHashCode")
 open class AVLTreeMapKSet<K, V>(override val data: AVLTreeMap<K, V>) :
         AVLTreeMapCollectionBase<K>(), MutableSet<K>
         where K: Any {
@@ -193,6 +174,8 @@ open class AVLTreeMapKSet<K, V>(override val data: AVLTreeMap<K, V>) :
         override fun next() = iterator.next().key
         override fun remove() = iterator.remove()
     }
+
+    override fun equals(other: Any?) = other is Set<*> && super.equals(other)
 }
 
 private class AVLTreeMapVCollection<V>(override val data: AVLTreeMap<*, V>) : AVLTreeMapCollectionBase<V>() {
@@ -326,7 +309,7 @@ internal class Node<K, V>(override val key: K,                       // Ключ
     override fun equals(other: Any?) =
             other is Map.Entry<*, *> && key == other.key && value == other.value
 
-    override fun hashCode() = key.hashCode().let { (it ushr 16) or (it shl 16) } xor (value?.hashCode() ?: 0)
+    override fun hashCode() = key.hashCode() xor (value?.hashCode() ?: 0)
 
     override fun toString() = "$key=$value"
 }
@@ -374,11 +357,11 @@ private fun <K: Any, V> Node<K, V>?.remove(item: Pair<K, V?>,           // Уд�
                 return this
             val l = left
             val r = right
+            old.value = this.value
             r ?: return l
             val min = r.findMin()
             min.right = r.removeMin()
             min.left = l
-            old.value = this.value
             return min.balance()
         }
     }
