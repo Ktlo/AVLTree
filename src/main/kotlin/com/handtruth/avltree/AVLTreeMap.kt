@@ -179,6 +179,7 @@ open class AVLTreeMapKSet<K, V>(override val data: AVLTreeMap<K, V>) :
     override fun equals(other: Any?) = other is Set<*> && super.equals(other)
 }
 
+@Suppress("EqualsOrHashCode")
 private class AVLTreeMapVCollection<V>(override val data: AVLTreeMap<*, V>) : AVLTreeMapCollectionBase<V>() {
     override fun contains(element: V) = data.containsValue(element)
 
@@ -221,6 +222,8 @@ private class AVLTreeMapVCollection<V>(override val data: AVLTreeMap<*, V>) : AV
         override fun next() = iterator.next().value
         override fun remove() = iterator.remove()
     }
+
+    override fun equals(other: Any?) = other is AVLTreeMapVCollection<*> && super.equals(other)
 }
 
 // Узел дерева

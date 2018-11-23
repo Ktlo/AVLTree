@@ -53,6 +53,8 @@ class AVLTreeMapTest {
                         -3424 to "The Value..."),
                 sample()
         )
+        assertEquals(sample().values, sample().apply { remove(2590); put(-8, "Cheburek") }.values)
+        assertNotEquals(sample().values, sample().apply { remove(2590); put(-8, "Cheburak") }.values)
     }
 
     @Test
@@ -211,6 +213,15 @@ class AVLTreeMapTest {
                 -39101619 to "TaReLkA",
                 -3424 to "The Value..."
         ).hashCode(), m.hashCode())
+
+        assertEquals(sample().values.hashCode(), sample().apply {
+            remove(2590)
+            put(-8, "Cheburek")
+        }.values.hashCode())
+        assertNotEquals(sample().values.hashCode(), sample().apply {
+            remove(2590)
+            put(-8, "Cheburak")
+        }.values.hashCode())
     }
 
 }
